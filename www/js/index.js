@@ -1,49 +1,84 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
 var app = {
-    // Application Constructor
+    templates: {
+        homeTpl: Handlebars.compile($("#home-tpl").html()),
+        productListTpl: Handlebars.compile($("#product-list-tpl").html())
+    },
     initialize: function() {
+        FastClick.attach(document.body);
         this.bindEvents();
     },
-    // Bind Event Listeners
-    //
-    // Bind any events that are required on startup. Common events are:
-    // 'load', 'deviceready', 'offline', and 'online'.
     bindEvents: function() {
         document.addEventListener('deviceready', this.onDeviceReady, false);
     },
-    // deviceready Event Handler
-    //
-    // The scope of 'this' is the event. In order to call the 'receivedEvent'
-    // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
     },
-    // Update DOM on a Received Event
     receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
+        app.renderHomeView();
+        if (navigator.notification) {
+            window.alert = function (message) {
+                navigator.notification.alert(
+                    message,    // message
+                    null,       // callback
+                    "ShopDash", // title
+                    'Continue'        // buttonName
+                );
+            };
+        }
+        window.alert('loading App');
+        app.loadDoc();
+    },
+    renderHomeView: function() {
+        console.log('renderHOME')
+        $('body').html(app.templates.homeTpl());
+    },
+    loadDoc: function() {
+        console.log('loadDoc')
+        // $.get("../data/argep.xml", {}, function(data) {
+        //     console.log('lllllllllllll')
+        //     app.renderHtmlFromXml(data);
+        //     console.log('xxxxxxxxxxxxxxx')
+        // }, 'xml');
 
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
+        var jqxhr = $.ajax({
+            url: "../data/argep.xml",
+            dataType: 'xml'
+        }).done(function(data) {
+            console.log(data)
+            app.renderHtmlFromXml(data);
+            console.log('xxxxxxxxxxxxxxx')
+        }).fail(function(error) {
+            console.log(error)
+        });
+        jqxhr.always(function() {
+            alert( "second complete" );
+        });
+        console.log('-------------------------')
+    },
+    renderHtmlFromXml: function(xml) {
+        console.log('ASDASD');
+        var $xml = $(xml);
+        var table="<tr>" +
+                "<th>Kép</th>" +
+                "<th>Név</th>" +
+                "<th>Leírás</th>" +
+            "</tr>";
+        var $termekek = $xml.find("termek");
+        $.each($termekek, function(i, termek) {
+            console.log(i);
+            var $termek = $(termek);
+            var nev        = $termek.find("nev").text();
+            var leiras     = $termek.find("leiras").text();
+            var fotolink   = $termek.find("fotolink").text();
+            var termeklink = $termek.find("termeklink").text();
 
-        console.log('Received Event: ' + id);
+            table += "<tr>" +
+                "<td><img src='" + fotolink + "' width='50'/></td>" +
+                "<td><a href='" + termeklink + "'>" + nev + "</a></td>" +
+                "<td>" + leiras +"</td>" +
+                "</tr>";
+        });
+        $("#products").html(table);
+        console.log($("#products").html());
     }
 };
